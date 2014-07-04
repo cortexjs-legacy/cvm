@@ -1,0 +1,26 @@
+{
+  "name": "cvm",
+  "version": "0.1.1",
+  "description": "Cortex Version Manager.",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cortexjs/cvm.git"
+  },
+  "keywords": [
+    "cvm",
+    "cortex",
+    "version",
+    "manager",
+    "bash"
+  ],
+  "author": "kael",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/cortexjs/cvm/issues"
+  },
+  "os": [
+    "!win32"
+  ],
+  "homepage": "https://github.com/cortexjs/cvm"
+}
