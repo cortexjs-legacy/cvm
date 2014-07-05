@@ -53,6 +53,7 @@ cvm_test_command curl && GET="curl -# -L"
 test -z "$GET" && abort "curl or wget required"
 
 debug "$GET"
+log "get" "$GET"
 
 #
 # Display help information
