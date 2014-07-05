@@ -33,6 +33,22 @@ $ cvm --help
   cvm list, cvm ls          Output the versions of cortex available
 ```
 
+****
+
+## For Developers
+
+Turn on cvm debug:
+
+```bash
+export CVM_DEBUG=1
+```
+
+Turn off:
+
+```bash
+export CVM_DEBUG=0
+```
+
 ## License
 
 (The MIT License)

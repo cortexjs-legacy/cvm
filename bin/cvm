@@ -1,21 +1,13 @@
 #!/usr/bin/env bash
 
-DEBUG=1
-CVM_VERSION="0.1.0"
-CVM_PREFIX=${CVM_PREFIX-/usr/local}
-VERSIONS_DIR=$CVM_PREFIX/cvm/versions
-CORTEX_MIRROR=${CORTEX_MIRROR-http://registry.npmjs.org}
-
-display_cvm_version() {
-  echo "$CVM_VERSION"
-}
-
+CVM_DEBUG=${CVM_DEBUG-0}
 #
-# Test if a command exists
+# Print debug info
 #
-cvm_test_command() {
-  command -v "$1" > /dev/null 2>&1
-  return $?
+debug() {
+  if [[ "$CVM_DEBUG" != "0" ]]; then
+    printf "     \x1B[35m[debug]\x1B[0m : \x1B[90m$1\x1B[0m\n"
+  fi
 }
 
 #
@@ -31,14 +23,33 @@ log() {
 abort() {
   printf "\n  \x1B[31mError: $@\x1B[0m\n\n" && exit 1
 }
+#################################################################
+
+CVM_VERSION="0.1.0"
+CVM_PREFIX=${CVM_PREFIX-/usr/local}
+VERSIONS_DIR=$CVM_PREFIX/cvm/versions
+CORTEX_MIRROR=${CORTEX_MIRROR-http://registry.npmjs.org}
+
+debug "CVM_VERSION  : $CVM_VERSION"
+debug "CVM_PREFIX   : $CVM_PREFIX"
+debug "VERSIONS_DIR : $VERSIONS_DIR"
+debug "CORTEX_MIRROR: $CORTEX_MIRROR"
+
+# Make dir if not exists
+if [[ ! -d "$VERSIONS_DIR" ]]; then
+  mkdir -p "$VERSIONS_DIR" || abort "unable to create dir $VERSIONS_DIR"
+fi
+
+display_cvm_version() {
+  echo "$CVM_VERSION"
+}
 
 #
-# Print debug info
+# Test if a command `$1` exists
 #
-debug() {
-  if [[ -n "$DEBUG" ]]; then
-    printf "     \x1B[35m[debug]\x1B[0m : \x1B[90m$1\x1B[0m\n"
-  fi
+cvm_test_command() {
+  command -v "$1" > /dev/null 2>&1
+  return $?
 }
 
 #
@@ -50,7 +61,6 @@ GET=
 cvm_test_command "wget" && GET="wget --no-check-certificate -q -O-"
 cvm_test_command "curl" && GET="curl -# -L"
 test -z "$GET" && abort "curl or wget required"
-
 debug "GET: $GET"
 
 #
@@ -72,7 +82,6 @@ display_help() {
     -h, --help                Display help information
 
 EOF
-  exit 0
 }
 
 #
@@ -84,15 +93,13 @@ versions_paths() {
     | sort -k 1,1n -k 2,2n -k 3,3n -t .
 }
 
-
 #
 # Check for installed version, and populate $active
 #
 check_current_version() {
   command -v cortex &> /dev/null
   if test $? -eq 0; then
-    active=`node --version`
-    active=${active#v}
+    active=`cortex -v`
   fi
 }
 
@@ -230,8 +237,8 @@ if test $# -eq 0; then
 else
   while test $# -ne 0; do
     case $1 in
-      -V|-v|--version) display_cvm_version ;;
-      -h|--help|help) display_help ;;
+      -V|-v|--version) display_cvm_version; exit ;;
+      -h|--help|help) display_help; exit ;;
       --latest) display_latest_version; exit ;;
       --stable) display_latest_stable_version; exit ;;
       bin|which) display_bin_path_for_version $2; exit ;;
