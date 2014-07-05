@@ -22,14 +22,14 @@ cvm_test_command() {
 # Log <type> <msg>
 #
 log() {
-  printf "  \033[36m%10s\033[0m : \033[90m%s\033[0m\n" $1 $2
+  printf "  \x1B[36m%10s\x1B[0m : \x1B[90m%s\x1B[0m\n" $1 $2
 }
 
 #
 # Exit with the given <msg ...>
 #
 abort() {
-  printf "\n  \033[31mError: $@\033[0m\n\n" && exit 1
+  printf "\n  \x1B[31mError: $@\x1B[0m\n\n" && exit 1
 }
 
 #
@@ -37,10 +37,9 @@ abort() {
 #
 debug() {
   if [[ -n "$DEBUG" ]]; then
-    printf "     \033[36m[debug]\033[0m : \033[90m$1\033[0m\n"
+    printf "     \x1B[36m[debug]\x1B[0m : \x1B[90m$1\x1B[0m\n"
   fi
 }
-debug "start"
 
 #
 # Ensure we have curl or wget support.
@@ -52,18 +51,16 @@ cvm_test_command wget && GET="wget --no-check-certificate -q -O-"
 cvm_test_command curl && GET="curl -# -L"
 test -z "$GET" && abort "curl or wget required"
 
-debug "$GET"
-log "get" "$GET"
+debug "GET: $GET"
 
 #
 # Display help information
 #
 display_help() {
+  printf "\n  \x1B[1mUsage:\x1B[0m cvm [COMMAND] [args]\n"
+  printf "\n  \x1B[1mCommands:\x1B[0m\n"
   cat <<-EOF
 
-  Usage: n [COMMAND] [args]
-
-  Commands:
     cvm                       Output versions installed
     cvm latest                Install the latest cortex
     cvm <version>             Install cortex <version>
