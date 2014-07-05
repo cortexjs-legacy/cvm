@@ -2,7 +2,9 @@
   "name": "cvm",
   "version": "0.1.1",
   "description": "Cortex Version Manager.",
-  "main": "index.js",
+  "bin": {
+    "cvm": "bin/cvm"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/cortexjs/cvm.git"

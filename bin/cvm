@@ -1,8 +1,22 @@
 #!/usr/bin/env bash
 
+DEBUG=1
+CVM_VERSION="0.1.0"
 CVM_PREFIX=${CVM_PREFIX-/usr/local}
-VERSIONS_DIR=$CVM_PREFIX/n/versions
+VERSIONS_DIR=$CVM_PREFIX/cvm/versions
 CORTEX_MIRROR=${CORTEX_MIRROR-http://registry.npmjs.org}
+
+display_cvm_version() {
+  echo "$CVM_VERSION"
+}
+
+#
+# Test if a command exists
+#
+cvm_test_command() {
+  command -v "$1" > /dev/null 2>&1
+  return $?
+}
 
 #
 # Log <type> <msg>
@@ -19,14 +33,26 @@ abort() {
 }
 
 #
+# Print debug info
+#
+debug() {
+  if [[ -n "$DEBUG" ]]; then
+    printf "     \033[36m[debug]\033[0m : \033[90m$1\033[0m\n"
+  fi
+}
+debug "start"
+
+#
 # Ensure we have curl or wget support.
 #
 GET=
 
 # wget support (Added --no-check-certificate for Github downloads)
-command -v wget > /dev/null && GET="wget --no-check-certificate -q -O-"
-command -v curl > /dev/null && GET="curl -# -L"
+cvm_test_command wget && GET="wget --no-check-certificate -q -O-"
+cvm_test_command curl && GET="curl -# -L"
 test -z "$GET" && abort "curl or wget required"
+
+debug "$GET"
 
 #
 # Display help information
@@ -189,16 +215,39 @@ activate() {
 #
 # 
 #
-cvm_strip_path() {
+# cvm_strip_path() {
 
-}
+# }
 
 #
 # 
 #
-cvm_prepend_path() {
+# cvm_prepend_path() {
 
-}
+# }
+
+if test $# -eq 0; then
+  test "$(ls -l $VERSIONS_DIR | grep ^d)" || abort "no installed version"
+  display_versions
+else
+  while test $# -ne 0; do
+    case $1 in
+      -V|-v|--version) display_cvm_version ;;
+      -h|--help|help) display_help ;;
+      --latest) display_latest_version; exit ;;
+      --stable) display_latest_stable_version; exit ;;
+      bin|which) display_bin_path_for_version $2; exit ;;
+      as|use) shift; execute_with_version $@; exit ;;
+      rm|-) shift; remove_versions $@; exit ;;
+      latest) install_node `n --latest`; exit ;;
+      stable) install_node `n --stable`; exit ;;
+      ls|list) display_remote_versions; exit ;;
+      prev) activate_previous; exit ;;
+      *) install_node $1; exit ;;
+    esac
+    shift
+  done
+fi
 
 
 # Credit
