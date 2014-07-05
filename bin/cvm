@@ -220,13 +220,11 @@ display_help() {
   cat <<-EOF
 
     cvm                       Output versions installed
-    cvm latest                Install the latest cortex
     cvm <version>             Install cortex <version>
-    cvm use <version>         Switch to the given version
     cvm rm <version ...>      Remove the given version(s)
     cvm list, cvm ls          Output the versions of cortex available
 
-    -V, --version             Output current version of n
+    -v, --version             Output current version of cvm
     -h, --help                Display help information
 
 EOF
@@ -306,13 +304,7 @@ else
     case $1 in
       -V|-v|--version) display_cvm_version; exit ;;
       -h|--help|help) display_help; exit ;;
-      # bin|which) display_bin_path_for_version $2; exit ;;
-      # use) shift; execute_with_version $@; exit ;;
       rm) shift; remove_versions $@; exit ;;
-      # latest) install_node `n --latest`; exit ;;
-      # stable) install_node `n --stable`; exit ;;
-      # ls|list) display_remote_versions; exit ;;
-      # prev) activate_previous; exit ;;
       *) install_cortex $1; exit ;;
     esac
     shift

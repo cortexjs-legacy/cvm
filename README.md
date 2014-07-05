@@ -30,9 +30,7 @@ $ cvm <version>
 $ cvm --help
 
   cvm                       Output versions installed
-  cvm latest                Install the latest cortex
   cvm <version>             Install cortex <version>
-  cvm use <version>         Switch to the given version
   cvm rm <version ...>      Remove the given version(s)
   cvm list, cvm ls          Output the versions of cortex available
 ```
