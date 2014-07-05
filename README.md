@@ -1,4 +1,4 @@
-# cvm
+# cvm [![NPM version](https://badge.fury.io/js/cvm.svg)](http://badge.fury.io/js/cvm)
 
 Cortex Version Manager:
 
