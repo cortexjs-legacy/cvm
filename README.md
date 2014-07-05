@@ -1,6 +1,10 @@
 # cvm
 
-Cortex Version Manager
+Cortex Version Manager:
+
+- Allow processes with different versions of cortex, which is useful for CI
+- Install and uninstall specified version of cortex
+- Switch to an installed version in miniseconds
 
 ## Install
 
@@ -37,7 +41,7 @@ $ cvm --help
 
 ## For Developers
 
-Turn on cvm debug:
+Turn on `cvm` debug:
 
 ```bash
 export CVM_DEBUG=1

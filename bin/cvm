@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 
+# Log
+# --------------------------------------------------------------------
 CVM_DEBUG=${CVM_DEBUG-0}
 #
 # Print debug info
-#
 debug() {
   if [[ "$CVM_DEBUG" != "0" ]]; then
     printf "     \x1B[35m[debug]\x1B[0m : \x1B[90m$1\x1B[0m\n"
@@ -12,18 +13,19 @@ debug() {
 
 #
 # Log <type> <msg>
-#
 log() {
   printf "  \x1B[36m%10s\x1B[0m : \x1B[90m%s\x1B[0m\n" $1 $2
 }
 
 #
 # Exit with the given <msg ...>
-#
 abort() {
   printf "\n  \x1B[31mError: $@\x1B[0m\n\n" && exit 1
 }
-#################################################################
+
+
+# Utilities
+# --------------------------------------------------------------------
 
 CVM_VERSION="0.1.0"
 CVM_PREFIX=${CVM_PREFIX-/usr/local}
@@ -40,21 +42,37 @@ if [[ ! -d "$VERSIONS_DIR" ]]; then
   mkdir -p "$VERSIONS_DIR" || abort "unable to create dir $VERSIONS_DIR"
 fi
 
-display_cvm_version() {
-  echo "$CVM_VERSION"
-}
-
 #
 # Test if a command `$1` exists
-#
 cvm_test_command() {
   command -v "$1" > /dev/null 2>&1
   return $?
 }
 
 #
-# Ensure we have curl or wget support.
+# Check if command npm is available, if not it will fail
+check_npm() {
+  cvm_test_command "npm" || abort "npm and node are required"
+}
+
 #
+# Strip path `$2` from `$1`
+cvm_strip_path() {
+  echo "$1" | sed -e "s#$NVM_DIR/[^/]*$2[^:]*:##g" -e "s#:$NVM_DIR/[^/]*$2[^:]*##g" -e "s#$NVM_DIR/[^/]*$2[^:]*##g"
+}
+
+#
+# Prepend `$2` to the beginning of `$1`
+cvm_prepend_path() {
+  if [ -z "$1" ]; then
+    echo "$2"
+  else
+    echo "$2:$1"
+  fi
+}
+
+#
+# Ensure we have curl or wget support.
 GET=
 
 # wget support (Added --no-check-certificate for Github downloads)
@@ -63,9 +81,139 @@ cvm_test_command "curl" && GET="curl -# -L"
 test -z "$GET" && abort "curl or wget required"
 debug "GET: $GET"
 
+
+
+#
+# Display sorted versions directories paths.
+versions_paths() {
+  ls -d $VERSIONS_DIR/* \
+    | egrep "/[0-9]+\.[0-9]+\.[0-9]+$" \
+    | sort -k 1,1n -k 2,2n -k 3,3n -t .
+}
+
+#
+# Check for installed version, and populate $active
+check_current_version() {
+  command -v cortex &> /dev/null
+  if test $? -eq 0; then
+    active=`cortex -v`
+  fi
+}
+
+#
+# List installed versions.
+list_versions_installed() {
+  for dir in `versions_paths`; do
+    local version=${dir##*/}
+    echo $version
+  done
+}
+
+#
+# Display installed versions with <selected>
+display_versions_with_selected() {
+  selected=$1
+  echo
+  for dir in `versions_paths`; do
+    local version=${dir##*/}
+    if test "$version" = "$selected"; then
+      printf "  \033[36mο\033[0m $version\033[0m\n"
+    else
+      printf "    \033[90m$version\033[0m\n"
+    fi
+  done
+  echo
+}
+
+#
+# List installed versions.
+list_versions_installed() {
+  for dir in `versions_paths`; do
+    local version=${dir##*/}
+    echo $version
+  done
+}
+
+#
+# Download a resource `$1` into directory `$2`
+download() {
+  wget $1
+}
+
+#
+# Check if the HEAD response of <url> `$1` is 200.
+is_ok() {
+  curl -Is $1 | head -n 1 | grep 200 > /dev/null
+}
+
+#
+# Generate the tarbal url by version `$1`
+tarball_url() {
+  local v="$1"
+  echo "$CORTEX_MIRROR/cortex/-/cortex-$v.tgz"
+}
+
+#
+# Activate <version>
+activate() {
+  local version=$1
+  check_current_version
+  if test "$version" != "$active"; then
+    local dir=$VERSIONS_DIR/$version
+    echo $active > $VERSIONS_DIR/.prev
+    cp -fR $dir/bin $dir/lib $dir/include $dir/share $N_PREFIX
+  fi
+}
+
+#
+# Activate <version>
+activate() {
+  local version=$1
+  check_current_version
+  if test "$version" != "$active"; then
+    local dir=$VERSIONS_DIR/$version
+    echo $active > $VERSIONS_DIR/.prev
+    cp -fR $dir/bin $dir/lib $dir/include $dir/share $N_PREFIX
+  fi
+}
+
+# Actions
+# --------------------------------------------------------------------
+UP=$'\x1B[A'
+DOWN=$'\x1B[B'
+#
+# Display current node --version and others installed.
+display_versions() {
+  clear
+  check_current_version
+  display_versions_with_selected $active
+
+  while true; do
+    read -s -n 3 c
+    case "$c" in
+      $UP)
+        clear
+        display_versions_with_selected $(prev_version_installed)
+        ;;
+      $DOWN)
+        clear
+        display_versions_with_selected $(next_version_installed)
+        ;;
+      *)
+        clear
+        activate $selected
+        exit
+        ;;
+    esac
+  done
+}
+
+display_cvm_version() {
+  echo "$CVM_VERSION"
+}
+
 #
 # Display help information
-#
 display_help() {
   printf "\n  \x1B[1mUsage:\x1B[0m cvm [COMMAND] [args]\n"
   printf "\n  \x1B[1mCommands:\x1B[0m\n"
@@ -85,72 +233,17 @@ EOF
 }
 
 #
-# Display sorted versions directories paths.
-#
-versions_paths() {
-  ls -d $VERSIONS_DIR/* \
-    | egrep "/[0-9]+\.[0-9]+\.[0-9]+$" \
-    | sort -k 1,1n -k 2,2n -k 3,3n -t .
-}
-
-#
-# Check for installed version, and populate $active
-#
-check_current_version() {
-  command -v cortex &> /dev/null
-  if test $? -eq 0; then
-    active=`cortex -v`
-  fi
-}
-
-#
-# List installed versions.
-#
-list_versions_installed() {
-  for dir in `versions_paths`; do
-    local version=${dir##*/}
-    echo $version
+# Remove <version ...>
+remove_versions() {
+  test -z $1 && abort "version(s) required"
+  while test $# -ne 0; do
+    rm -rf $VERSIONS_DIR/${1#v}
+    shift
   done
 }
 
 #
-# Download a resource `$1` into directory `$2`
-#
-download() {
-  wget $1
-}
-
-#
-# Check if the HEAD response of <url> is 200.
-#
-is_ok() {
-  curl -Is $1 | head -n 1 | grep 200 > /dev/null
-}
-
-#
-# Generate the tarbal url by version `$1`
-#
-tarball_url() {
-  local v="$1"
-  echo "$CORTEX_MIRROR/cortex/-/cortex-$v.tgz"
-}
-
-#
-# Activate <version>
-#
-activate() {
-  local version=$1
-  check_current_version
-  if test "$version" != "$active"; then
-    local dir=$VERSIONS_DIR/$version
-    echo $active > $VERSIONS_DIR/.prev
-    cp -fR $dir/bin $dir/lib $dir/include $dir/share $N_PREFIX
-  fi
-}
-
-#
-# Install cortex
-#
+# Install cortex with version `$1`
 install_cortex() {
   # Remove leading `'v'`
   local version=${1#v}
@@ -204,51 +297,23 @@ install_cortex() {
   echo
 }
 
-#
-# Activate <version>
-#
-activate() {
-  local version=$1
-  check_current_version
-  if test "$version" != "$active"; then
-    local dir=$VERSIONS_DIR/$version
-    echo $active > $VERSIONS_DIR/.prev
-    cp -fR $dir/bin $dir/lib $dir/include $dir/share $N_PREFIX
-  fi
-}
-
-#
-# 
-#
-# cvm_strip_path() {
-
-# }
-
-#
-# 
-#
-# cvm_prepend_path() {
-
-# }
 
 if test $# -eq 0; then
-  test "$(ls -l $VERSIONS_DIR | grep ^d)" || abort "no installed version"
+  test "$(ls -l $VERSIONS_DIR | grep ^d)" || abort "no installed versions"
   display_versions
 else
   while test $# -ne 0; do
     case $1 in
       -V|-v|--version) display_cvm_version; exit ;;
       -h|--help|help) display_help; exit ;;
-      --latest) display_latest_version; exit ;;
-      --stable) display_latest_stable_version; exit ;;
-      bin|which) display_bin_path_for_version $2; exit ;;
-      as|use) shift; execute_with_version $@; exit ;;
-      rm|-) shift; remove_versions $@; exit ;;
-      latest) install_node `n --latest`; exit ;;
-      stable) install_node `n --stable`; exit ;;
-      ls|list) display_remote_versions; exit ;;
-      prev) activate_previous; exit ;;
-      *) install_node $1; exit ;;
+      # bin|which) display_bin_path_for_version $2; exit ;;
+      # use) shift; execute_with_version $@; exit ;;
+      rm) shift; remove_versions $@; exit ;;
+      # latest) install_node `n --latest`; exit ;;
+      # stable) install_node `n --stable`; exit ;;
+      # ls|list) display_remote_versions; exit ;;
+      # prev) activate_previous; exit ;;
+      *) install_cortex $1; exit ;;
     esac
     shift
   done
