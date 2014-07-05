@@ -37,7 +37,7 @@ abort() {
 #
 debug() {
   if [[ -n "$DEBUG" ]]; then
-    printf "     \x1B[36m[debug]\x1B[0m : \x1B[90m$1\x1B[0m\n"
+    printf "     \x1B[35m[debug]\x1B[0m : \x1B[90m$1\x1B[0m\n"
   fi
 }
 
@@ -47,8 +47,8 @@ debug() {
 GET=
 
 # wget support (Added --no-check-certificate for Github downloads)
-cvm_test_command wget && GET="wget --no-check-certificate -q -O-"
-cvm_test_command curl && GET="curl -# -L"
+cvm_test_command "wget" && GET="wget --no-check-certificate -q -O-"
+cvm_test_command "curl" && GET="curl -# -L"
 test -z "$GET" && abort "curl or wget required"
 
 debug "GET: $GET"
