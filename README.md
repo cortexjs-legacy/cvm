@@ -35,8 +35,6 @@ $ cvm --help
   cvm list, cvm ls          Output the versions of cortex available
 ```
 
-****
-
 ## For Developers
 
 Turn on `cvm` debug:
