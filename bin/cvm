@@ -242,7 +242,7 @@ remove_versions() {
 
 #
 # Install cortex with version `$1`
-install_cortex() {
+install() {
   # Remove leading `'v'`
   local version=${1#v}
 
@@ -302,12 +302,29 @@ if test $# -eq 0; then
 else
   while test $# -ne 0; do
     case $1 in
-      -V|-v|--version) display_cvm_version; exit ;;
-      -h|--help|help) display_help; exit ;;
-      rm) shift; remove_versions $@; exit ;;
-      *) install_cortex $1; exit ;;
+      "-v" | "--version")
+        display_cvm_version
+        ;;
+
+      "-h" | "--help" | "help")
+        display_help
+        ;;
+
+      "-i" | "--install")
+        install $1
+        ;;
+
+      "rm")
+        shift
+        remove_versions $@
+        ;;
+
+      *)
+        install $1
+        activate $1
+        ;;
     esac
-    shift
+    exit
   done
 fi
 

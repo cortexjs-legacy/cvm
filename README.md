@@ -18,10 +18,10 @@ or
 $ make install
 ```
 
-### Installing A Specific Version of Cortex
+### Installing and Activate A Specific Version of Cortex
 
 ```
-$ cvm <version>
+$ cvm 5.5.0
 ```
 
 ### Usage
@@ -29,8 +29,9 @@ $ cvm <version>
 ```
 $ cvm --help
 
-  cvm                       Output versions installed
-  cvm <version>             Install cortex <version>
+  cvm                       Output versions installed in interactive interface
+  cvm <version>             Install and activate <version>
+  cvm install <version>     Only install <version>
   cvm rm <version ...>      Remove the given version(s)
   cvm list, cvm ls          Output the versions of cortex available
 ```
