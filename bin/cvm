@@ -46,7 +46,7 @@ debug "VERSIONS_DIR : $VERSIONS_DIR"
 
 #
 # Test if a command `$1` exists
-cvm_test_command() {
+test_command() {
   command -v "$1" > /dev/null 2>&1
   return $?
 }
@@ -60,7 +60,7 @@ erase_line() {
 #
 # Check if command npm is available, if not it will fail
 check_npm() {
-  cvm_test_command "npm" || abort "npm and node are required"
+  test_command "npm" || abort "npm and node are required"
 }
 
 #
@@ -68,8 +68,8 @@ check_npm() {
 GET=
 
 # wget support (Added --no-check-certificate for Github downloads)
-cvm_test_command "wget" && GET="wget --no-check-certificate -q -O-"
-cvm_test_command "curl" && GET="curl -# -L"
+test_command "wget" && GET="wget --no-check-certificate -q -O-"
+test_command "curl" && GET="curl -# -L"
 test -z "$GET" && abort "curl or wget required"
 debug "GET: $GET"
 
@@ -126,9 +126,15 @@ list_versions_installed() {
 }
 
 #
-# Download a resource `$1` into directory `$2`
-download() {
-  wget $1
+# Output version after selected.
+next_version_installed() {
+  list_versions_installed | grep $selected -A 1 | tail -n 1
+}
+
+#
+# Output version before selected.
+prev_version_installed() {
+  list_versions_installed | grep $selected -B 1 | head -n 1
 }
 
 #
@@ -145,35 +151,19 @@ tarball_url() {
 }
 
 #
-# Activate <version>
-activate() {
-  local version=$1
-  check_current_version
-  if test "$version" != "$active"; then
-    local dir=$VERSIONS_DIR/$version
-    echo $active > $VERSIONS_DIR/.prev
-    cp -fR $dir/bin $dir/lib $dir/include $dir/share $N_PREFIX
-  fi
+# Test if the version is valid
+test_version() {
+  return
 }
 
 #
-# Test if the version is valid
-test_version() {
-  # local version=$1
-  # local dots=`echo $version | sed 's/[^.]*//g'`
-  # if test ${#dots} -eq 1; then
-  #   version=`$GET 2> /dev/null $CVM_MIRROR \
-  #     | egrep -o '[0-9]+\.[0-9]+\.[0-9]+' \
-  #     | egrep -v '^0\.[0-7]\.' \
-  #     | egrep -v '^0\.8\.[0-5]$' \
-  #     | sort -u -k 1,1n -k 2,2n -k 3,3n -t . \
-  #     | egrep ^$version \
-  #     | tail -n1`
-
-  #   test "$version" || return 1
-  # fi
-  # debug ${#dots}
-  return
+# Test if there are versions exist
+versions_exist() {
+  if test "$(ls -l $VERSIONS_DIR | grep ^d)"; then
+    return
+  else
+    return 1
+  fi
 }
 
 # Actions
@@ -201,6 +191,7 @@ display_versions() {
       *)
         clear
         activate $selected
+        echo
         exit
         ;;
     esac
@@ -234,7 +225,7 @@ EOF
 remove_versions() {
   test -z $1 && abort "version(s) required"
   while test $# -ne 0; do
-    rm -rf $VERSIONS_DIR/${1#v}
+    rm -rf $VERSIONS_DIR/${1#v} || abort "sudo required, maybe"
     shift
   done
 }
@@ -264,7 +255,7 @@ install() {
   log "mkdir" "$dir"
   mkdir -p "$dir"
   if [[ "$?" -ne 0 ]] ; then
-    abort "sudo required"
+    abort "sudo required, maybe"
   else
     touch "$dir/cvm.lock"
   fi
@@ -299,7 +290,7 @@ activate() {
 
     ln -sf "$cvm_bin" "$bin"
     if [[ "$?" -ne 0 ]]; then
-      abort "unable to link, sudo required"
+      abort "unable to link, sudo required, maybe"
     fi
 
     log "link" "$bin -> $cvm_bin"
@@ -311,7 +302,7 @@ activate() {
 
 
 if test $# -eq 0; then
-  test "$(ls -l $VERSIONS_DIR | grep ^d)" || abort "no installed versions"
+  versions_exist || abort "no installed versions"
   display_versions
 else
   while test $# -ne 0; do
