@@ -21,7 +21,10 @@ debug() {
 #
 # Log <type> <msg>
 log() {
-  printf "  \x1B[36m%10s\x1B[0m : \x1B[90m%s\x1B[0m\n" $1 $2
+  local label=$1
+  shift
+  printf "  \x1B[36m%10s\x1B[0m :" $label
+  printf " \x1B[90m$@\x1B[0m\n"
 }
 
 #
@@ -154,20 +157,23 @@ activate() {
 }
 
 #
-# Activate <version>
-activate() {
-  local version=$1
-  check_current_version
-  if test "$version" != "$active"; then
-    local dir=$VERSIONS_DIR/$version
-    echo $active > $VERSIONS_DIR/.prev
-    cp -fR $dir/bin $dir/lib $dir/include $dir/share $N_PREFIX
-  fi
+# Test if the version is valid
+test_version() {
+  # local version=$1
+  # local dots=`echo $version | sed 's/[^.]*//g'`
+  # if test ${#dots} -eq 1; then
+  #   version=`$GET 2> /dev/null $CVM_MIRROR \
+  #     | egrep -o '[0-9]+\.[0-9]+\.[0-9]+' \
+  #     | egrep -v '^0\.[0-7]\.' \
+  #     | egrep -v '^0\.8\.[0-5]$' \
+  #     | sort -u -k 1,1n -k 2,2n -k 3,3n -t . \
+  #     | egrep ^$version \
+  #     | tail -n1`
 
-  # if [[ ! -e $dir/cvm.lock ]] ; then
-  #   activate $version
-  #   exit
+  #   test "$version" || return 1
   # fi
+  # debug ${#dots}
+  return
 }
 
 # Actions
@@ -234,26 +240,6 @@ remove_versions() {
 }
 
 #
-# Test if the version is valid
-test_version() {
-  local version=$1
-  local dots=`echo $version | sed 's/[^.]*//g'`
-  # if test ${#dots} -eq 1; then
-  #   version=`$GET 2> /dev/null $CVM_MIRROR \
-  #     | egrep -o '[0-9]+\.[0-9]+\.[0-9]+' \
-  #     | egrep -v '^0\.[0-7]\.' \
-  #     | egrep -v '^0\.8\.[0-5]$' \
-  #     | sort -u -k 1,1n -k 2,2n -k 3,3n -t . \
-  #     | egrep ^$version \
-  #     | tail -n1`
-
-  #   test "$version" || return 1
-  # fi
-  # debug ${#dots}
-  return
-}
-
-#
 # Install cortex with version `$1`
 install() {
   # Remove leading `'v'`
@@ -266,22 +252,21 @@ install() {
 
   # If already installed, activate it.
   if test -d "$dir"; then
-    log "exists" "v$version"
-    log "at" "$dir"
+    log "exists" "v$version at $dir"
     return
   fi
 
   echo
   log "install" "v$version"
 
-  is_ok "$url" || abort "invalid version $version"
+  is_ok "$url" || abort "tarball $version is not ok"
 
   log "mkdir" "$dir"
   mkdir -p "$dir"
-  if [ $? -ne 0 ] ; then
+  if [[ "$?" -ne 0 ]] ; then
     abort "sudo required"
   else
-    touch $dir/cvm.lock
+    touch "$dir/cvm.lock"
   fi
 
   cd $dir
@@ -291,15 +276,37 @@ install() {
   erase_line
   rm -f "$dir/cvm.lock"
 
-  log "npm" "install"
+  log "run" "npm install"
   echo
   npm install 1> /dev/null
 
-  log "installed" "v$version"
-  log "at" "$dir"
-  # activate $version
-  # log installed $(node --version)
-  echo
+  log "installed" "v$version at $dir"
+}
+
+#
+# Activate <version>
+activate() {
+  local version=$1
+  check_current_version
+  if test "$version" != "$active"; then
+    local dir="$VERSIONS_DIR/$version"
+    local bin="$CVM_PREFIX/bin/cortex"
+    local cvm_bin="$dir/bin/cortex-cli.js"
+
+    if [[ -e "$dir/cvm.lock" ]] ; then
+      return
+    fi
+
+    ln -sf "$cvm_bin" "$bin"
+    if [[ "$?" -ne 0 ]]; then
+      abort "unable to link, sudo required"
+    fi
+
+    log "link" "$bin -> $cvm_bin"
+    log "activated" "v$version"
+  else
+    log "activated" "v$version already activated"
+  fi
 }
 
 
@@ -320,6 +327,7 @@ else
       "i" | "install")
         shift
         install $1
+        echo
         ;;
 
       "rm")
@@ -330,6 +338,7 @@ else
       *)
         install $1
         activate $1
+        echo
         ;;
     esac
     exit
