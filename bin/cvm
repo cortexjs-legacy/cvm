@@ -1,8 +1,15 @@
 #!/usr/bin/env bash
 
-# Log
+# Globals
 # --------------------------------------------------------------------
 CVM_DEBUG=${CVM_DEBUG-0}
+CVM_VERSION="0.1.0"
+CVM_PREFIX=${CVM_PREFIX-/usr/local}
+CVM_MIRROR=${CVM_MIRROR-http://registry.npmjs.org}
+
+# Log
+# --------------------------------------------------------------------
+
 #
 # Print debug info
 debug() {
@@ -20,27 +27,19 @@ log() {
 #
 # Exit with the given <msg ...>
 abort() {
-  printf "\n  \x1B[31mError: $@\x1B[0m\n\n" && exit 1
+  printf "\n  \x1B[31mError: $@\x1B[0m\n\n"
+  exit 1
 }
 
 
 # Utilities
 # --------------------------------------------------------------------
-
-CVM_VERSION="0.1.0"
-CVM_PREFIX=${CVM_PREFIX-/usr/local}
-VERSIONS_DIR=$CVM_PREFIX/cvm/versions
-CORTEX_MIRROR=${CORTEX_MIRROR-http://registry.npmjs.org}
+VERSIONS_DIR="$CVM_PREFIX/cvm/versions"
 
 debug "CVM_VERSION  : $CVM_VERSION"
 debug "CVM_PREFIX   : $CVM_PREFIX"
+debug "CVM_MIRROR   : $CVM_MIRROR"
 debug "VERSIONS_DIR : $VERSIONS_DIR"
-debug "CORTEX_MIRROR: $CORTEX_MIRROR"
-
-# Make dir if not exists
-if [[ ! -d "$VERSIONS_DIR" ]]; then
-  mkdir -p "$VERSIONS_DIR" || abort "unable to create dir $VERSIONS_DIR"
-fi
 
 #
 # Test if a command `$1` exists
@@ -50,25 +49,15 @@ cvm_test_command() {
 }
 
 #
+# Move up a line and erase.
+erase_line() {
+  printf "\033[1A\033[2K"
+}
+
+#
 # Check if command npm is available, if not it will fail
 check_npm() {
   cvm_test_command "npm" || abort "npm and node are required"
-}
-
-#
-# Strip path `$2` from `$1`
-cvm_strip_path() {
-  echo "$1" | sed -e "s#$NVM_DIR/[^/]*$2[^:]*:##g" -e "s#:$NVM_DIR/[^/]*$2[^:]*##g" -e "s#$NVM_DIR/[^/]*$2[^:]*##g"
-}
-
-#
-# Prepend `$2` to the beginning of `$1`
-cvm_prepend_path() {
-  if [ -z "$1" ]; then
-    echo "$2"
-  else
-    echo "$2:$1"
-  fi
 }
 
 #
@@ -80,7 +69,6 @@ cvm_test_command "wget" && GET="wget --no-check-certificate -q -O-"
 cvm_test_command "curl" && GET="curl -# -L"
 test -z "$GET" && abort "curl or wget required"
 debug "GET: $GET"
-
 
 
 #
@@ -150,7 +138,7 @@ is_ok() {
 # Generate the tarbal url by version `$1`
 tarball_url() {
   local v="$1"
-  echo "$CORTEX_MIRROR/cortex/-/cortex-$v.tgz"
+  echo "$CVM_MIRROR/cortex/-/cortex-$v.tgz"
 }
 
 #
@@ -175,6 +163,11 @@ activate() {
     echo $active > $VERSIONS_DIR/.prev
     cp -fR $dir/bin $dir/lib $dir/include $dir/share $N_PREFIX
   fi
+
+  # if [[ ! -e $dir/cvm.lock ]] ; then
+  #   activate $version
+  #   exit
+  # fi
 }
 
 # Actions
@@ -241,57 +234,71 @@ remove_versions() {
 }
 
 #
+# Test if the version is valid
+test_version() {
+  local version=$1
+  local dots=`echo $version | sed 's/[^.]*//g'`
+  # if test ${#dots} -eq 1; then
+  #   version=`$GET 2> /dev/null $CVM_MIRROR \
+  #     | egrep -o '[0-9]+\.[0-9]+\.[0-9]+' \
+  #     | egrep -v '^0\.[0-7]\.' \
+  #     | egrep -v '^0\.8\.[0-5]$' \
+  #     | sort -u -k 1,1n -k 2,2n -k 3,3n -t . \
+  #     | egrep ^$version \
+  #     | tail -n1`
+
+  #   test "$version" || return 1
+  # fi
+  # debug ${#dots}
+  return
+}
+
+#
 # Install cortex with version `$1`
 install() {
   # Remove leading `'v'`
   local version=${1#v}
-
-  local dots=`echo $version | sed 's/[^.]*//g'`
-  if test ${#dots} -eq 1; then
-    version=`$GET 2> /dev/null $CORTEX_MIRROR \
-      | egrep -o '[0-9]+\.[0-9]+\.[0-9]+' \
-      | egrep -v '^0\.[0-7]\.' \
-      | egrep -v '^0\.8\.[0-5]$' \
-      | sort -u -k 1,1n -k 2,2n -k 3,3n -t . \
-      | egrep ^$version \
-      | tail -n1`
-
-    test $version || abort "invalid version ${1#v}"
-  fi
+  test_version "$version" || abort "invalid version $version"
 
   local dir=$VERSIONS_DIR/$version
   local url=$(tarball_url $version)
+  debug "tarball: $url"
 
   # If already installed, activate it.
-  if test -d $dir; then
-    if [[ ! -e $dir/n.lock ]] ; then
-      activate $version
-      exit
-    fi
+  if test -d "$dir"; then
+    log "exists" "v$version"
+    log "at" "$dir"
+    return
   fi
 
   echo
-  log install v$version
+  log "install" "v$version"
 
-  is_ok $url || abort "invalid version $version"
+  is_ok "$url" || abort "invalid version $version"
 
-  log mkdir $dir
-  mkdir -p $dir
+  log "mkdir" "$dir"
+  mkdir -p "$dir"
   if [ $? -ne 0 ] ; then
     abort "sudo required"
   else
-    touch $dir/n.lock
+    touch $dir/cvm.lock
   fi
 
   cd $dir
 
-  log fetch $url
-  curl -L# $url | tar -zx --strip 1
+  log "fetch" "$url"
+  curl -L# "$url" | tar -zx --strip 1
   erase_line
-  rm -f $dir/n.lock
+  rm -f "$dir/cvm.lock"
 
-  activate $version
-  log installed $(node --version)
+  log "npm" "install"
+  echo
+  npm install 1> /dev/null
+
+  log "installed" "v$version"
+  log "at" "$dir"
+  # activate $version
+  # log installed $(node --version)
   echo
 }
 
@@ -310,7 +317,8 @@ else
         display_help
         ;;
 
-      "-i" | "--install")
+      "i" | "install")
+        shift
         install $1
         ;;
 
