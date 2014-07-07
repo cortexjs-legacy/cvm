@@ -205,19 +205,16 @@ display_cvm_version() {
 #
 # Display help information
 display_help() {
+  printf "\n  \x1B[1mC\x1B[0m\x1B[90mortex\x1B[0m \x1B[1mV\x1B[0m\x1B[90mersion\x1B[0m \x1B[1mM\x1B[0m\x1B[90manager\x1B[0m\n"
   printf "\n  \x1B[1mUsage:\x1B[0m cvm [COMMAND] [args]\n"
-  printf "\n  \x1B[1mCommands:\x1B[0m\n"
-  cat <<-EOF
-
-    cvm                       Output versions installed
-    cvm <version>             Install cortex <version>
-    cvm rm <version ...>      Remove the given version(s)
-    cvm list, cvm ls          Output the versions of cortex available
-
-    -v, --version             Output current version of cvm
-    -h, --help                Display help information
-
-EOF
+  printf "\n  \x1B[1mCommands:\x1B[0m\n\n"
+  printf "  cvm ls                    \x1B[90mOutput versions of cortex installed\x1B[0m\n"
+  printf "  cvm install <version>     \x1B[90mInstall cortex@<version>\x1B[0m\n"
+  printf "  cvm <version>             \x1B[90mInstall and activate cortex@<version>\x1B[0m\n"
+  printf "  cvm rm <version ...>      \x1B[90mRemove the given version(s)\x1B[0m\n"
+  echo
+  printf "  -v, --version             \x1B[90mOutput current version of cvm\x1B[0m\n"
+  printf "  -h, --help                \x1B[90mDisplay help information\x1B[0m\n\n"
 }
 
 #
@@ -226,6 +223,7 @@ remove_versions() {
   test -z $1 && abort "version(s) required"
   while test $# -ne 0; do
     rm -rf $VERSIONS_DIR/${1#v} || abort "sudo required, maybe"
+    log "removed" ${1#v}
     shift
   done
 }
@@ -254,7 +252,7 @@ install() {
 
   log "mkdir" "$dir"
   mkdir -p "$dir"
-  if [[ "$?" -ne 0 ]] ; then
+  if [[ $? -ne 0 ]] ; then
     abort "sudo required, maybe"
   else
     touch "$dir/cvm.lock"
@@ -269,7 +267,7 @@ install() {
 
   log "run" "npm install"
   echo
-  npm install 1> /dev/null
+  npm install 1> /dev/null || abort "fails to npm install, maybe sudo required"
 
   local bin="$dir/bin/cortex-cli.js"
   mkdir -p "$dir/.bin"
@@ -293,7 +291,7 @@ activate() {
     fi
 
     ln -sf "$cvm_bin" "$bin"
-    if [[ "$?" -ne 0 ]]; then
+    if [[ $? -ne 0 ]]; then
       abort "unable to link, sudo required, maybe"
     fi
 
@@ -306,34 +304,40 @@ activate() {
 
 
 if test $# -eq 0; then
-  versions_exist || abort "no installed versions"
-  display_versions
+  display_help
 else
   while test $# -ne 0; do
     case $1 in
-      "-v" | "--version")
+      "-v" | "--version" )
         display_cvm_version
         ;;
 
-      "-h" | "--help" | "help")
+      "-h" | "--help" | "help" )
         display_help
         ;;
 
-      "i" | "install")
+      "i" | "install" )
         shift
         install $1
-        echo
         ;;
 
-      "rm")
+      "rm" )
         shift
         remove_versions $@
+        ;;
+
+      "ls" | "list" )
+        versions_exist || abort "no installed versions"
+        display_versions
+        ;;
+
+      "use" )
+        activate $1
         ;;
 
       *)
         install $1
         activate $1
-        echo
         ;;
     esac
     exit

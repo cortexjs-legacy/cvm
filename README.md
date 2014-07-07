@@ -12,6 +12,16 @@ Cortex Version Manager:
 $ npm install -g cvm
 ```
 
+### Support multiple processes
+
+To use different versions for cortex for multiple processes, you need to source it from your shell:
+
+```bash
+source /path/to/cvm/cvm-use.sh
+```
+
+I always add this line to my `~/.bashrc`, `~/.profile`, or `~/.zshrc` file to have it automatically sourced upon login. 
+
 or
 
 ```bash
@@ -29,7 +39,8 @@ $ cvm 5.5.0
 ```
 $ cvm --help
 
-  cvm                       Output versions installed in interactive interface
+  cvm, cvm -h               Show help message
+  cvm ls, cvm list          Output versions installed in interactive interface
   cvm <version>             Install and activate <version>
   cvm install <version>     Only install <version>
   cvm rm <version ...>      Remove the given version(s)
