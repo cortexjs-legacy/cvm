@@ -237,20 +237,20 @@ install() {
   local version=${1#v}
   test_version "$version" || abort "invalid version $version"
 
-  local dir=$VERSIONS_DIR/$version
+  local dir="$VERSIONS_DIR/$version"
   local url=$(tarball_url $version)
   debug "tarball: $url"
 
   # If already installed, activate it.
-  if test -d "$dir"; then
-    log "exists" "v$version at $dir"
+  if [[ -d "$dir" ]]; then
+    log "exists" "$version at $dir"
     return
   fi
 
   echo
-  log "install" "v$version"
+  log "install" "$version"
 
-  is_ok "$url" || abort "tarball $version is not ok"
+  is_ok "$url" || abort "remove $version not found, tarball is not ok"
 
   log "mkdir" "$dir"
   mkdir -p "$dir"
@@ -271,7 +271,11 @@ install() {
   echo
   npm install 1> /dev/null
 
-  log "installed" "v$version at $dir"
+  local bin="$dir/bin/cortex-cli.js"
+  mkdir -p "$dir/.bin"
+  ln -sf "$bin" "$dir/.bin/cortex"
+
+  log "installed" "$version at $dir"
 }
 
 #
@@ -294,9 +298,9 @@ activate() {
     fi
 
     log "link" "$bin -> $cvm_bin"
-    log "activated" "v$version"
+    log "activated" "$version"
   else
-    log "activated" "v$version already activated"
+    log "activated" "$version already activated"
   fi
 }
 
@@ -338,7 +342,7 @@ fi
 
 
 # Credit
-# A lot of bash functions from visionmedia/n
+# Inspired by visionmedia/n
 
 # (The MIT License)
 # Copyright (c) 2014 TJ Holowaychuk <tj@vision-media.ca>
