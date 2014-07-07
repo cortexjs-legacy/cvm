@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# Inspired by [visionmedia/n](http://github.com/visionmedia/n)
+
 # Globals
 # --------------------------------------------------------------------
 CVM_DEBUG=${CVM_DEBUG-0}
@@ -205,13 +207,18 @@ display_cvm_version() {
 #
 # Display help information
 display_help() {
-  printf "\n  \x1B[1mC\x1B[0m\x1B[90mortex\x1B[0m \x1B[1mV\x1B[0m\x1B[90mersion\x1B[0m \x1B[1mM\x1B[0m\x1B[90manager\x1B[0m\n"
-  printf "\n  \x1B[1mUsage:\x1B[0m cvm [COMMAND] [args]\n"
-  printf "\n  \x1B[1mCommands:\x1B[0m\n\n"
-  printf "  cvm ls                    \x1B[90mOutput versions of cortex installed\x1B[0m\n"
-  printf "  cvm install <version>     \x1B[90mInstall cortex@<version>\x1B[0m\n"
+  echo
+  printf "  \x1B[1mC\x1B[0m\x1B[90mortex\x1B[0m \x1B[1mV\x1B[0m\x1B[90mersion\x1B[0m \x1B[1mM\x1B[0m\x1B[90manager\x1B[0m\n"
+  echo
+  printf "  \x1B[1mUsage:\x1B[0m cvm [COMMAND] [args]\n"
+  echo
+  printf "  \x1B[1mCommands:\x1B[0m\n"
+  echo
   printf "  cvm <version>             \x1B[90mInstall and activate cortex@<version>\x1B[0m\n"
+  printf "  cvm install <version>     \x1B[90mInstall cortex@<version>\x1B[0m\n"
+  printf "  cvm use <version>         \x1B[90mActivate cortex@<version>\x1B[0m\n"
   printf "  cvm rm <version ...>      \x1B[90mRemove the given version(s)\x1B[0m\n"
+  printf "  cvm ls                    \x1B[90mOutput versions of cortex installed\x1B[0m\n"
   echo
   printf "  -v, --version             \x1B[90mOutput current version of cvm\x1B[0m\n"
   printf "  -h, --help                \x1B[90mDisplay help information\x1B[0m\n\n"
@@ -343,29 +350,3 @@ else
     exit
   done
 fi
-
-
-# Credit
-# Inspired by visionmedia/n
-
-# (The MIT License)
-# Copyright (c) 2014 TJ Holowaychuk <tj@vision-media.ca>
-
-# Permission is hereby granted, free of charge, to any person obtaining
-# a copy of this software and associated documentation files (the
-# 'Software'), to deal in the Software without restriction, including
-# without limitation the rights to use, copy, modify, merge, publish,
-# distribute, sublicense, and/or sell copies of the Software, and to
-# permit persons to whom the Software is furnished to do so, subject to
-# the following conditions:
-
-# The above copyright notice and this permission notice shall be
-# included in all copies or substantial portions of the Software.
-
-# THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,
-# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-# IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-# CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-# TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-# SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
