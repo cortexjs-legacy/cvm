@@ -339,7 +339,7 @@ else
         ;;
 
       "use" )
-        activate $1
+        activate $2
         ;;
 
       *)
