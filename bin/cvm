@@ -339,7 +339,8 @@ else
         ;;
 
       "use" )
-        activate $2
+        shift
+        activate $1
         ;;
 
       *)
