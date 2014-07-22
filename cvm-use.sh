@@ -98,6 +98,6 @@ cvm-debug() {
     cvm_debug "cvm debug on"
   else
     cvm_debug "cvm debug off"
-    export CVM_DEBUG=0
+    export CVM_DEBUG=
   fi
 }

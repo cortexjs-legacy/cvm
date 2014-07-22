@@ -263,7 +263,7 @@ display_help() {
   echo
   printf "  \x1B[1mCommands:\x1B[0m\n"
   echo
-  printf "  cvm <version>             \x1B[90mInstall and activate cortex@<version>\x1B[0m\n"
+  printf "  cvm <version>             \x1B[90mInstall and activate. range also supported. eg: \`cvm latest\`\x1B[0m\n"
   printf "  cvm install <version>     \x1B[90mInstall cortex@<version>\x1B[0m\n"
   printf "  cvm use <version>         \x1B[90mActivate cortex@<version>\x1B[0m\n"
   printf "  cvm use                   \x1B[90mSelect from installed versions\x1B[0m\n"
