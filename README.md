@@ -1,6 +1,6 @@
-# cvm [![NPM version](https://badge.fury.io/js/cvm.svg)](http://badge.fury.io/js/cvm)
+# CVN: The Cortex Version Manager [![NPM version](https://badge.fury.io/js/cvm.svg)](http://badge.fury.io/js/cvm)
 
-Cortex Version Manager:
+Version Manager for [Cortex](https://github.com/cortexjs/cortex), the package manager for browsers.
 
 - Allow processes with different versions of cortex, which is useful for CI
 - Install and uninstall specified version of cortex
