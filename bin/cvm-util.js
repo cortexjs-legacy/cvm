@@ -24,7 +24,7 @@ function write (message) {
 
 
 function versions (callback) {
-  request('http://www.google.com', function (err, res, body) {
+  request(CVM_MIRROR, function (err, res, body) {
     if (err) {
       return callback(err);
     }
@@ -60,7 +60,7 @@ switch(action) {
         abort();
       }
 
-      write(version.join(' '));
+      write(versions.join(' '));
     });
     break;
 

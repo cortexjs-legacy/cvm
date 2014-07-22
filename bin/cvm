@@ -65,15 +65,32 @@ check_npm() {
   test_command "npm" || abort "npm and node are required"
 }
 
-#
-# Ensure we have curl or wget support.
-GET=
+# #
+# # Ensure we have curl or wget support.
+# GET=
 
-# wget support (Added --no-check-certificate for Github downloads)
-test_command "wget" && GET="wget --no-check-certificate -q -O-"
-test_command "curl" && GET="curl -# -L"
-test -z "$GET" && abort "curl or wget required"
-debug "GET: $GET"
+# # wget support (Added --no-check-certificate for Github downloads)
+# test_command "wget" && GET="wget --no-check-certificate -q -O-"
+# test_command "curl" && GET="curl -# -L"
+# test -z "$GET" && abort "curl or wget required"
+# debug "GET: $GET"
+
+
+is_explicit_version() {
+  return 1
+}
+
+
+resolve_version() {
+  # Remove leading `'v'`
+  local version=${1#v}
+  if is_explicit_version "$version"; then
+    echo "$version"
+  else
+    version=`cvmutil version $version`
+    echo "$version"
+  fi
+}
 
 
 #
@@ -100,6 +117,35 @@ list_versions_installed() {
     local version=${dir##*/}
     echo $version
   done
+}
+
+
+display_remote_versions() {
+  check_current_version
+  local response=""
+  response=`$GET 2> /dev/null $CVM_MIRROR`
+  response=${response//'/\'}
+  response=${response/"/\"}
+  local versions=(`node -e "Object.keys(JSON.parse('$response').versions).join(' ')"`)
+    # | egrep -o '[0-9]+\.[0-9]+\.[0-9]+' \
+    # | egrep -v '^0\.[0-7]\.' \
+    # | egrep -v '^0\.8\.[0-5]$' \
+    # | sort -u -k 1,1n -k 2,2n -k 3,3n -t . \
+    # | awk '{ print "  " $1 }'`
+
+  echo
+  for v in $versions; do
+    if test "$active" = "$v"; then
+      printf "  \033[36mο\033[0m $v \033[0m\n"
+    else
+      if test -d $VERSIONS_DIR/$v; then
+        printf "    $v \033[0m\n"
+      else
+        printf "    \033[90m$v\033[0m\n"
+      fi
+    fi
+  done
+  echo
 }
 
 #
@@ -155,7 +201,11 @@ tarball_url() {
 #
 # Test if the version is valid
 test_version() {
-  return
+  if [[ -n "$1" ]]; then
+    return 0
+  else
+    return 1
+  fi
 }
 
 #
@@ -238,8 +288,7 @@ remove_versions() {
 #
 # Install cortex with version `$1`
 install() {
-  # Remove leading `'v'`
-  local version=${1#v}
+  local version=$(resolve_version $1)
   test_version "$version" || abort "invalid version $version"
 
   local dir="$VERSIONS_DIR/$version"
