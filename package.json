@@ -3,7 +3,8 @@
   "version": "0.2.1",
   "description": "Cortex Version Manager.",
   "bin": {
-    "cvm": "bin/cvm"
+    "cvm": "bin/cvm",
+    "cvmutil": "bin/cvm-util.js"
   },
   "repository": {
     "type": "git",
@@ -24,5 +25,9 @@
   "os": [
     "!win32"
   ],
-  "homepage": "https://github.com/cortexjs/cvm"
+  "homepage": "https://github.com/cortexjs/cvm",
+  "dependencies": {
+    "request": "^2.38.0",
+    "semver": "^2.3.1"
+  }
 }
