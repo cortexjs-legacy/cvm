@@ -34,6 +34,18 @@ $ make install
 $ cvm 5.5.0
 ```
 
+Install latest
+
+```
+$ cvm latest
+```
+
+Install by range
+
+```
+$ cvm 5.x
+```
+
 ### Usage
 
 ```
