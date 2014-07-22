@@ -95,7 +95,8 @@ resolve_version() {
     version="$v"
   else
     log "resolving" "'$v' from remote server"
-    version=`cvmutil version $version`
+    version=`cvmutil version $v`
+    debug "resolved: $v -> $version"
     test_version "$version" || abort "invalid range $v, or no internet connection."
   fi
 }
