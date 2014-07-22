@@ -39,12 +39,21 @@ $ cvm 5.5.0
 ```
 $ cvm --help
 
-  cvm, cvm -h               Show help message
-  cvm ls, cvm list          Output versions installed in interactive interface
-  cvm <version>             Install and activate <version>
-  cvm install <version>     Only install <version>
+  Cortex Version Manager
+
+  Usage: cvm [COMMAND] [args]
+
+  Commands:
+
+  cvm <version>             Install and activate cortex@<version>
+  cvm install <version>     Install cortex@<version>
+  cvm use <version>         Activate cortex@<version>
+  cvm use                   Select from installed versions
   cvm rm <version ...>      Remove the given version(s)
-  cvm list, cvm ls          Output the versions of cortex available
+  cvm ls/list               Show all available versions from remote server
+
+  -v, --version             Output current version of cvm
+  -h, --help                Display help information
 ```
 
 ## For Developers
