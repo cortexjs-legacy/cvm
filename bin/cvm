@@ -4,7 +4,7 @@
 
 # Globals
 # --------------------------------------------------------------------
-CVM_DEBUG=${CVM_DEBUG-0}
+CVM_DEBUG=${CVM_DEBUG-}
 CVM_VERSION="0.1.0"
 CVM_PREFIX=${CVM_PREFIX-/usr/local}
 CVM_MIRROR=${CVM_MIRROR-http://registry.npmjs.org}
@@ -15,7 +15,7 @@ CVM_MIRROR=${CVM_MIRROR-http://registry.npmjs.org}
 #
 # Print debug info
 debug() {
-  if [[ "$CVM_DEBUG" != "0" ]]; then
+  if [[ -n "$CVM_DEBUG" ]]; then
     printf "     \x1B[35m[debug]\x1B[0m : \x1B[90m$1\x1B[0m\n"
   fi
 }
@@ -77,18 +77,26 @@ check_npm() {
 
 
 is_explicit_version() {
-  return 1
+  result=`echo "$1" | awk '/^[0-9]+\.[0-9]+\.[0-9]+$/'`
+  if [[ -n $result ]]; then
+    return
+  else
+    return 1
+  fi
 }
 
-
+#
+# Resolve the version or ranges, and populate the real version
 resolve_version() {
   # Remove leading `'v'`
-  local version=${1#v}
-  if is_explicit_version "$version"; then
-    echo "$version"
+  local v=${1#v}
+
+  if is_explicit_version "$v"; then
+    version="$v"
   else
+    log "resolving" "'$v' from remote server"
     version=`cvmutil version $version`
-    echo "$version"
+    test_version "$version" || abort "invalid version $v, or no internet connection."
   fi
 }
 
@@ -120,33 +128,33 @@ list_versions_installed() {
 }
 
 
-display_remote_versions() {
-  check_current_version
-  local response=""
-  response=`$GET 2> /dev/null $CVM_MIRROR`
-  response=${response//'/\'}
-  response=${response/"/\"}
-  local versions=(`node -e "Object.keys(JSON.parse('$response').versions).join(' ')"`)
-    # | egrep -o '[0-9]+\.[0-9]+\.[0-9]+' \
-    # | egrep -v '^0\.[0-7]\.' \
-    # | egrep -v '^0\.8\.[0-5]$' \
-    # | sort -u -k 1,1n -k 2,2n -k 3,3n -t . \
-    # | awk '{ print "  " $1 }'`
+# display_remote_versions() {
+#   check_current_version
+#   local response=""
+#   response=`$GET 2> /dev/null $CVM_MIRROR`
+#   response=${response//'/\'}
+#   response=${response/"/\"}
+#   local versions=(`node -e "Object.keys(JSON.parse('$response').versions).join(' ')"`)
+#     # | egrep -o '[0-9]+\.[0-9]+\.[0-9]+' \
+#     # | egrep -v '^0\.[0-7]\.' \
+#     # | egrep -v '^0\.8\.[0-5]$' \
+#     # | sort -u -k 1,1n -k 2,2n -k 3,3n -t . \
+#     # | awk '{ print "  " $1 }'`
 
-  echo
-  for v in $versions; do
-    if test "$active" = "$v"; then
-      printf "  \033[36mο\033[0m $v \033[0m\n"
-    else
-      if test -d $VERSIONS_DIR/$v; then
-        printf "    $v \033[0m\n"
-      else
-        printf "    \033[90m$v\033[0m\n"
-      fi
-    fi
-  done
-  echo
-}
+#   echo
+#   for v in $versions; do
+#     if test "$active" = "$v"; then
+#       printf "  \033[36mο\033[0m $v \033[0m\n"
+#     else
+#       if test -d $VERSIONS_DIR/$v; then
+#         printf "    $v \033[0m\n"
+#       else
+#         printf "    \033[90m$v\033[0m\n"
+#       fi
+#     fi
+#   done
+#   echo
+# }
 
 #
 # Display installed versions with <selected>
@@ -267,8 +275,9 @@ display_help() {
   printf "  cvm <version>             \x1B[90mInstall and activate cortex@<version>\x1B[0m\n"
   printf "  cvm install <version>     \x1B[90mInstall cortex@<version>\x1B[0m\n"
   printf "  cvm use <version>         \x1B[90mActivate cortex@<version>\x1B[0m\n"
+  printf "  cvm use                   \x1B[90mSelect from installed versions\x1B[0m\n"
   printf "  cvm rm <version ...>      \x1B[90mRemove the given version(s)\x1B[0m\n"
-  printf "  cvm ls                    \x1B[90mOutput versions of cortex installed\x1B[0m\n"
+  printf "  cvm ls/list               \x1B[90mShow all available versions from remote server\x1B[0m\n"
   echo
   printf "  -v, --version             \x1B[90mOutput current version of cvm\x1B[0m\n"
   printf "  -h, --help                \x1B[90mDisplay help information\x1B[0m\n\n"
@@ -288,8 +297,7 @@ remove_versions() {
 #
 # Install cortex with version `$1`
 install() {
-  local version=$(resolve_version $1)
-  test_version "$version" || abort "invalid version $version"
+  resolve_version "$1"
 
   local dir="$VERSIONS_DIR/$version"
   local url=$(tarball_url $version)
@@ -304,7 +312,7 @@ install() {
   echo
   log "install" "$version"
 
-  is_ok "$url" || abort "remove $version not found, tarball is not ok"
+  is_ok "$url" || abort "remote $version not found, tarball is not ok"
 
   log "mkdir" "$dir"
   mkdir -p "$dir"
@@ -383,18 +391,22 @@ else
         ;;
 
       "ls" | "list" )
-        versions_exist || abort "no installed versions"
-        display_versions
+        echo "comming..."
         ;;
 
       "use" )
         shift
-        activate $1
+        if [[ -n "$1" ]]; then
+          activate $1
+        else
+          versions_exist || abort "no installed versions"
+          display_versions
+        fi
         ;;
 
       *)
         install $1
-        activate $1
+        activate $version
         ;;
     esac
     exit

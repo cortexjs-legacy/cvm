@@ -49,6 +49,10 @@ function versions (callback) {
 
 
 function resolve (range, versions) {
+  if (range === 'latest') {
+    return versions.pop();
+  }
+
   return semver.maxSatisfying(versions, range);
 }
 
