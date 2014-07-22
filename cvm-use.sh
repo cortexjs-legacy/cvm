@@ -82,8 +82,7 @@ cvm-use() {
   cvm_debug "$dir"
   cvm install "$version"
   if [[ $? -ne 0 ]]; then
-
-    return
+    return 1
   fi
 
   printf "\033[1A\033[2K"

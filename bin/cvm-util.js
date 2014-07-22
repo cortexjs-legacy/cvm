@@ -64,7 +64,7 @@ switch(action) {
         abort();
       }
 
-      write(versions.join(' '));
+      write(versions.join('\n'));
     });
     break;
 
