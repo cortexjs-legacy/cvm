@@ -1,4 +1,4 @@
-# CVN: The Cortex Version Manager [![NPM version](https://badge.fury.io/js/cvm.svg)](http://badge.fury.io/js/cvm)
+# CVM: The Cortex Version Manager [![NPM version](https://badge.fury.io/js/cvm.svg)](http://badge.fury.io/js/cvm)
 
 Version Manager for [Cortex](https://github.com/cortexjs/cortex), the package manager for browsers.
 
